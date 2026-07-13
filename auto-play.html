@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>开心消消乐 - 挂机脚本</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header h1 .sub { font-size: 12px; color: #8892b0; font-weight: 400; }
+
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 320px;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+
+    .game-area {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    .game-frame-wrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    #gameFrame {
+      width: 100%;
+      max-width: 600px;
+      height: 90vh;
+      border: none;
+      display: block;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #8892b0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+    .toggle-row + .toggle-row { border-top: 1px solid rgba(255,255,255,0.05); }
+    .toggle-label { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .toggle-label .icon { font-size: 18px; }
+
+    .toggle {
+      position: relative;
+      width: 44px; height: 24px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle.active { background: #22c55e; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 20px; height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle.active::after { transform: translateX(20px); }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #e94560, #c23152);
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(233,69,96,0.4); }
+    .btn-primary.active {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+    }
+
+    .slider-row { margin-top: 12px; }
+    .slider-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: #8892b0; margin-bottom: 6px;
+    }
+    input[type="range"] {
+      width: 100%; height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      appearance: none;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px; height: 16px;
+      background: #e94560;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 13px;
+    }
+    .stat-value {
+      font-weight: 700;
+      color: #e94560;
+    }
+
+    .log {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      line-height: 1.6;
+    }
+    .log-entry {
+      padding: 2px 0;
+      color: #8892b0;
+    }
+    .log-entry .time { color: #4a5568; margin-right: 6px; }
+    .log-entry.success { color: #22c55e; }
+    .log-entry.warning { color: #eab308; }
+    .log-entry.error { color: #ef4444; }
+    .log-entry.info { color: #3b82f6; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .status-badge.running {
+      background: rgba(34,197,94,0.15);
+      color: #22c55e;
+    }
+    .status-badge.stopped {
+      background: rgba(136,146,176,0.15);
+      color: #8892b0;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .status-badge.running .status-dot {
+      background: #22c55e;
+      animation: blink 1s infinite;
+    }
+    .status-badge.stopped .status-dot { background: #8892b0; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    @media (max-width: 768px) {
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; max-height: 50vh; }
+      #gameFrame { height: 50vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🤖</div>
+      <h1>
+        挂机脚本控制台
+        <div class="sub">开心消消乐自动化工具</div>
+      </h1>
+    </div>
+    <div id="statusBadge" class="status-badge stopped">
+      <span class="status-dot"></span>
+      <span id="statusText">已停止</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="panel">
+        <button id="startBtn" class="btn btn-primary">
+          ▶ 启动挂机
+        </button>
+        <div class="slider-row">
+          <div class="slider-label">
+            <span>消除速度</span>
+            <span id="speedLabel">正常 (1200ms)</span>
+          </div>
+          <input type="range" id="speedSlider" min="400" max="2500" step="100" value="1200">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">⚙️ 功能开关</div>
+        <div class="toggle-row">
+          <div class="toggle-label"><span class="icon">🎮</span> 自动消除方块</div>
+          <div id="togglePlay" class="toggle active"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label"><span class="icon">📺</span> 自动看广告赚金币</div>
+          <div id="toggleAd" class="toggle active"></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label"><span class="icon">🔄</span> 游戏结束自动重开</div>
+          <div id="toggleRestart" class="toggle active"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">📊 实时统计</div>
+        <div class="stat">
+          <span>消除次数</span>
+          <span class="stat-value" id="statMoves">0</span>
+        </div>
+        <div class="stat">
+          <span>看广告次数</span>
+          <span class="stat-value" id="statAds">0</span>
+        </div>
+        <div class="stat">
+          <span>累计金币收益</span>
+          <span class="stat-value" id="statCoins">0</span>
+        </div>
+        <div class="stat">
+          <span>运行时长</span>
+          <span class="stat-value" id="statTime">00:00:00</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">📋 运行日志</div>
+        <div class="log" id="logContainer">
+          <div class="log-entry info"><span class="time">[--:--:--]</span>等待启动...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <div class="game-frame-wrapper">
+        <iframe id="gameFrame" src="/"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const BOARD_SIZE = 8;
+      const CANDY_EMOJIS = ['🍬', '🍭', '🍪', '🍩', '🧁', '🍫'];
+
+      // 状态
+      let running = false;
+      let autoPlay = true;
+      let autoAd = true;
+      let autoRestart = true;
+      let playSpeed = 1200;
+      let stats = { moves: 0, ads: 0, coins: 0, startTime: 0 };
+      let playTimer = null;
+      let adTimer = null;
+      let timeTimer = null;
+      let isExecuting = false;
+
+      // DOM
+      const gameFrame = document.getElementById('gameFrame');
+      const startBtn = document.getElementById('startBtn');
+      const statusBadge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+      const logContainer = document.getElementById('logContainer');
+      const speedSlider = document.getElementById('speedSlider');
+      const speedLabel = document.getElementById('speedLabel');
+
+      // 日志
+      function log(msg, type = '') {
+        const now = new Date();
+        const time = String(now.getHours()).padStart(2,'0') + ':' +
+                     String(now.getMinutes()).padStart(2,'0') + ':' +
+                     String(now.getSeconds()).padStart(2,'0');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry ' + type;
+        entry.innerHTML = `<span class="time">[${time}]</span>${msg}`;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+        // 限制日志数量
+        while (logContainer.children.length > 100) {
+          logContainer.removeChild(logContainer.firstChild);
+        }
+      }
+
+      // 获取iframe文档
+      function getDoc() {
+        try {
+          return gameFrame.contentDocument || gameFrame.contentWindow.document;
+        } catch(e) {
+          return null;
+        }
+      }
+
+      // 读取棋盘
+      function readBoard() {
+        const doc = getDoc();
+        if (!doc) return null;
+        const board = [];
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          board[r] = [];
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            const el = doc.querySelector(`button[data-row="${r}"][data-col="${c}"]`);
+            if (!el) return null;
+            board[r][c] = parseInt(el.getAttribute('data-candy'));
+          }
+        }
+        return board;
+      }
+
+      // 检查匹配
+      function findMatches(board) {
+        const matches = new Set();
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE - 2; c++) {
+            if (board[r][c] === board[r][c+1] && board[r][c] === board[r][c+2]) {
+              matches.add(`${r}-${c}`);
+              matches.add(`${r}-${c+1}`);
+              matches.add(`${r}-${c+2}`);
+              let k = c + 3;
+              while (k < BOARD_SIZE && board[r][k] === board[r][c]) {
+                matches.add(`${r}-${k}`);
+                k++;
+              }
+            }
+          }
+        }
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          for (let r = 0; r < BOARD_SIZE - 2; r++) {
+            if (board[r][c] === board[r+1][c] && board[r][c] === board[r+2][c]) {
+              matches.add(`${r}-${c}`);
+              matches.add(`${r+1}-${c}`);
+              matches.add(`${r+2}-${c}`);
+              let k = r + 3;
+              while (k < BOARD_SIZE && board[k][c] === board[r][c]) {
+                matches.add(`${k}-${c}`);
+                k++;
+              }
+            }
+          }
+        }
+        return matches;
+      }
+
+      function hasMatches(board) {
+        return findMatches(board).size > 0;
+      }
+
+      function swapBoard(board, r1, c1, r2, c2) {
+        const newBoard = board.map(row => [...row]);
+        const tmp = newBoard[r1][c1];
+        newBoard[r1][c1] = newBoard[r2][c2];
+        newBoard[r2][c2] = tmp;
+        return newBoard;
+      }
+
+      // 寻找最佳移动
+      function findBestMove(board) {
+        let best = null;
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            // 右
+            if (c < BOARD_SIZE - 1) {
+              const swapped = swapBoard(board, r, c, r, c+1);
+              if (hasMatches(swapped)) {
+                const cnt = findMatches(swapped).size;
+                if (!best || cnt > best.size) {
+                  best = { from: {r, c}, to: {r, c: c+1}, size: cnt };
+                }
+              }
+            }
+            // 下
+            if (r < BOARD_SIZE - 1) {
+              const swapped = swapBoard(board, r, c, r+1, c);
+              if (hasMatches(swapped)) {
+                const cnt = findMatches(swapped).size;
+                if (!best || cnt > best.size) {
+                  best = { from: {r, c}, to: {r: r+1, c}, size: cnt };
+                }
+              }
+            }
+          }
+        }
+        return best;
+      }
+
+      // 点击方块
+      function clickCell(r, c) {
+        const doc = getDoc();
+        if (!doc) return false;
+        const el = doc.querySelector(`button[data-row="${r}"][data-col="${c}"]`);
+        if (!el) return false;
+        el.click();
+        return true;
+      }
+
+      // 点击广告按钮
+      function clickAdButton() {
+        const doc = getDoc();
+        if (!doc) return false;
+        const btn = doc.getElementById('ad-reward-button');
+        if (!btn || btn.disabled) return false;
+        btn.click();
+        return true;
+      }
+
+      // 检查游戏状态
+      function getGameStatus() {
+        const doc = getDoc();
+        if (!doc) return 'unknown';
+        // 检查是否有结果显示模态框
+        const modal = doc.querySelector('.fixed.inset-0.bg-black\\/60');
+        if (modal) {
+          const text = modal.textContent || '';
+          if (text.includes('恭喜') || text.includes('胜利') || text.includes('通关')) return 'won';
+          if (text.includes('失败') || text.includes('再来')) return 'lost';
+        }
+        return 'playing';
+      }
+
+      // 点击重新开始
+      function clickRestart() {
+        const doc = getDoc();
+        if (!doc) return false;
+        const modal = doc.querySelector('.fixed.inset-0.bg-black\\/60');
+        if (modal) {
+          const btns = modal.querySelectorAll('button');
+          for (const btn of btns) {
+            const text = btn.textContent || '';
+            if (text.includes('重新') || text.includes('再玩') || text.includes('下一关') || text.includes('继续')) {
+              btn.click();
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      // 检查是否在动画中
+      function isAnimating() {
+        const doc = getDoc();
+        if (!doc) return true;
+        // 检查是否有animate-spin或animate-pulse类的方块
+        const animating = doc.querySelector('button[data-row].animate-pulse, button[data-row].scale-0');
+        return !!animating;
+      }
+
+      // 自动消除
+      async function autoPlayTick() {
+        if (isExecuting) return;
+        if (!autoPlay) return;
+
+        const status = getGameStatus();
+        if (status === 'won' || status === 'lost') {
+          if (autoRestart) {
+            log(`游戏${status === 'won' ? '通关' : '失败'}，自动重开...`, 'info');
+            clickRestart();
+          }
+          return;
+        }
+
+        if (isAnimating()) return;
+
+        const board = readBoard();
+        if (!board) return;
+
+        const best = findBestMove(board);
+        if (!best) {
+          log('未找到可消除的移动，等待...', 'warning');
+          return;
+        }
+
+        isExecuting = true;
+        log(`消除: (${best.from.r},${best.from.c}) → (${best.to.r},${best.to.c}) 消除${best.size}个`, 'success');
+
+        clickCell(best.from.r, best.from.c);
+        await sleep(150);
+        clickCell(best.to.r, best.to.c);
+        stats.moves++;
+        updateStats();
+
+        setTimeout(() => { isExecuting = false; }, 800);
+      }
+
+      // 自动广告
+      function autoAdTick() {
+        if (!autoAd) return;
+        if (clickAdButton()) {
+          stats.ads++;
+          stats.coins += 50;
+          updateStats();
+          log('自动看广告 +50金币', 'success');
+        }
+      }
+
+      function sleep(ms) {
+        return new Promise(r => setTimeout(r, ms));
+      }
+
+      // 更新统计显示
+      function updateStats() {
+        document.getElementById('statMoves').textContent = stats.moves;
+        document.getElementById('statAds').textContent = stats.ads;
+        document.getElementById('statCoins').textContent = stats.coins;
+      }
+
+      function updateTime() {
+        if (!running) return;
+        const elapsed = Math.floor((Date.now() - stats.startTime) / 1000);
+        const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+        const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('statTime').textContent = `${h}:${m}:${s}`;
+      }
+
+      // 启动/停止
+      function toggleRun() {
+        if (running) {
+          stop();
+        } else {
+          start();
+        }
+      }
+
+      function start() {
+        running = true;
+        stats.startTime = Date.now();
+        startBtn.textContent = '⏹ 停止挂机';
+        startBtn.classList.add('active');
+        statusBadge.className = 'status-badge running';
+        statusText.textContent = '运行中';
+        log('🚀 挂机脚本已启动', 'success');
+
+        if (autoPlay) {
+          playTimer = setInterval(autoPlayTick, playSpeed);
+        }
+        if (autoAd) {
+          adTimer = setInterval(autoAdTick, 1000);
+        }
+        timeTimer = setInterval(updateTime, 1000);
+      }
+
+      function stop() {
+        running = false;
+        startBtn.textContent = '▶ 启动挂机';
+        startBtn.classList.remove('active');
+        statusBadge.className = 'status-badge stopped';
+        statusText.textContent = '已停止';
+        log('⏹ 挂机脚本已停止', 'warning');
+
+        if (playTimer) { clearInterval(playTimer); playTimer = null; }
+        if (adTimer) { clearInterval(adTimer); adTimer = null; }
+        if (timeTimer) { clearInterval(timeTimer); timeTimer = null; }
+      }
+
+      // 开关切换
+      function setupToggle(id, callback) {
+        const el = document.getElementById(id);
+        el.addEventListener('click', () => {
+          el.classList.toggle('active');
+          const active = el.classList.contains('active');
+          callback(active);
+        });
+      }
+
+      setupToggle('togglePlay', (active) => {
+        autoPlay = active;
+        if (running) {
+          if (playTimer) { clearInterval(playTimer); playTimer = null; }
+          if (active) { playTimer = setInterval(autoPlayTick, playSpeed); }
+        }
+        log(`自动消除: ${active ? '开启' : '关闭'}`, 'info');
+      });
+
+      setupToggle('toggleAd', (active) => {
+        autoAd = active;
+        if (running) {
+          if (adTimer) { clearInterval(adTimer); adTimer = null; }
+          if (active) { adTimer = setInterval(autoAdTick, 1000); }
+        }
+        log(`自动看广告: ${active ? '开启' : '关闭'}`, 'info');
+      });
+
+      setupToggle('toggleRestart', (active) => {
+        autoRestart = active;
+        log(`自动重开: ${active ? '开启' : '关闭'}`, 'info');
+      });
+
+      // 速度滑块
+      speedSlider.addEventListener('input', (e) => {
+        playSpeed = Number(e.target.value);
+        const label = playSpeed <= 600 ? '极速' : playSpeed <= 1000 ? '快速' : playSpeed <= 1500 ? '正常' : '慢速';
+        speedLabel.textContent = `${label} (${playSpeed}ms)`;
+        if (running && playTimer) {
+          clearInterval(playTimer);
+          playTimer = setInterval(autoPlayTick, playSpeed);
+        }
+      });
+
+      startBtn.addEventListener('click', toggleRun);
+
+      // 等待iframe加载
+      gameFrame.addEventListener('load', () => {
+        log('游戏页面已加载', 'success');
+      });
+
+      log('挂机脚本就绪，点击"启动挂机"开始', 'info');
+    })();
+  </script>
+</body>
+</html>
